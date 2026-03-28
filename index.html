@@ -3,251 +3,134 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunmi King Power Label Designer</title>
-
+<title>Sunmi Label Multi-Print</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background-color: #f4f4f4;
-  }
-
-  /* --- ส่วนออกแบบ (ซ่อนเมื่อพิมพ์) --- */
+  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+  
+  /* แผงควบคุม (ซ่อนตอนพิมพ์) */
   .editor-panel {
-    background: white;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    width: 600px;
-    margin: 0 auto 20px;
+    background: white; padding: 20px; border-radius: 8px;
+    max-width: 500px; margin: 0 auto 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
-  .editor-group { margin-bottom: 15px; }
-  .editor-label { display: block; font-weight: bold; margin-bottom: 5px; }
+  .editor-group { margin-bottom: 12px; }
   .editor-input { width: 100%; padding: 8px; box-sizing: border-box; }
-  .btn-print {
-    display: block;
-    width: 100%;
-    padding: 12px;
-    background-color: #003366; /* สี King Power */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    margin-top: 20px;
+  .no-print { display: block; }
+
+  /* ส่วนกระดาษพิมพ์ */
+  #print-container { width: 80mm; margin: 0 auto; background: white; }
+
+  /* แถวสติกเกอร์คู่ */
+  .sticker-row {
+    width: 80mm; display: flex; justify-content: space-between;
+    height: 18mm; overflow: hidden; page-break-after: always;
+    border-bottom: 1px dashed #eee; /* เส้นนำสายตาตอนออกแบบ */
   }
 
-  /* --- ส่วนจำลอง Layout สติกเกอร์ --- */
-  .stickers-container {
-    width: 80mm; /* ขนาดรวมหน้ากว้างกระดาษ Sunmi */
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    overflow: hidden;
-  }
-
-  /* จำลองสติกเกอร์ 1 แผ่น (สี่เหลี่ยมผืนผ้า) */
   .sticker {
-    width: 38mm; /* ขนาดโดยประมาณของสติกเกอร์ 1 แผ่นในคู่ */
-    height: 18mm; /* ความสูงของสติกเกอร์ */
-    background-color: transparent; /* ไม่พิมพ์สีพื้น */
-    border: 1px dashed transparent; /* ซ่อนเส้นขอบเพื่อดูขอบเขตตอนออกแบบ */
-    padding: 1mm 2mm;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    position: relative;
-    color: black; /* สีตัวอักษรตอนพิมพ์ */
+    width: 38mm; height: 18mm; position: relative;
+    box-sizing: border-box; padding: 1mm 2mm;
   }
+
+  .qr-code { width: 10mm; height: 10mm; position: absolute; top: 1mm; left: 1mm; }
   
-  /* ตัวอย่างแสดงเส้นขอบตอนออกแบบ */
-  .sticker-design { border: 1px dashed red; }
+  .product-details { margin-left: 13mm; margin-top: 0.5mm; }
+  .product-name { font-weight: bold; line-height: 1.1; }
+  .product-code { font-size: 8px; margin-top: 2px; }
 
-  /* --- Layout ภายในสติกเกอร์ --- */
-  
-  /* QR Code ซ้ายมือ */
-  .qr-code-wrapper {
-    position: absolute;
-    top: 1mm;
-    left: 1mm;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .qr-code {
-    width: 10mm;
-    height: 10mm;
-  }
-  .qr-text-input {
-    width: 12mm;
-    font-size: 6px;
-    margin-top: 1mm;
-    text-align: center;
-    border: 1px solid #ccc;
-    background: white;
-  }
+  .price-value { position: absolute; font-weight: bold; line-height: 1; }
 
-  /* ข้อความถัดจาก QR */
-  .product-details {
-    margin-left: 14mm;
-    margin-top: 0.5mm;
-  }
-  .product-name {
-    font-weight: bold;
-    line-height: 1.1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .product-code {
-    font-size: 8px;
-    margin-top: 0.5mm;
-  }
-
-  /* เลขมุมขวา (ราคา) */
-  .price-value {
-    position: absolute;
-    bottom: 1mm;
-    right: 2mm;
-    font-weight: bold;
-    line-height: 1;
-  }
-
-  /* --- ตั้งค่าสำหรับการพิมพ์ --- */
   @media print {
-    body { background-color: white; padding: 0; }
-    .editor-panel { display: none; }
-    .qr-text-input { border: none; background: transparent; color: transparent; /* ซ่อนตัวหนังสือ input ใน QR */}
-    .sticker { border: none !important; margin-bottom: 0mm; }
-    .stickers-container { justify-content: space-between; margin: 0; width: 100%; }
-    .qr-code-wrapper { background: white; padding: 0.5mm; border-radius: 1mm; } /* ทำให้ QR ตัดกับพื้นสี */
+    .no-print { display: none !important; }
+    body { background: white; padding: 0; }
+    .sticker-row { border: none; }
   }
-
 </style>
 </head>
 <body>
 
-  <div class="editor-panel">
-    <h3>เครื่องมือออกแบบป้ายราคา Sunmi</h3>
-    
-    <div class="editor-group">
-      <label class="editor-label">รหัส QR Code:</label>
-      <input type="text" id="qr-input" class="editor-input" value="8856082006643" onkeyup="updateSticker()">
-    </div>
-    
-    <div class="editor-group">
-      <label class="editor-label">ชื่อสินค้า (สามารถเปลี่ยนตัวอักษรได้):</label>
-      <input type="text" id="product-name-input" class="editor-input" value="HDH 1 GNITE COLLAGEN GUMMY" onkeyup="updateSticker()">
-      <div>
-        ขนาดตัวอักษร: <input type="number" id="product-name-size" value="10" min="6" max="24" onchange="updateSticker()"> px
-      </div>
-    </div>
-    
-    <div class="editor-group">
-      <label class="editor-label">ราคา/ตัวเลขมุมขวา:</label>
-      <input type="number" id="price-input" class="editor-input" value="240" onkeyup="updateSticker()">
-      <div>
-        ขนาดตัวอักษร: <input type="number" id="price-size" value="24" min="10" max="60" onchange="updateSticker()"> px
-      </div>
-    </div>
-
-    <div class="editor-group">
-      <label class="editor-label">การย้ายตำแหน่ง:</label>
-      <div>
-        ราคา (แนวขวา): <input type="range" id="price-right-pos" min="-10" max="40" value="2" oninput="updateSticker()">
-        ราคา (แนวล่าง): <input type="range" id="price-bottom-pos" min="-10" max="40" value="1" oninput="updateSticker()">
-      </div>
-    </div>
-
-    <button class="btn-print" onclick="window.print()">🖨️ สั่งพิมพ์</button>
+<div class="editor-panel no-print">
+  <h3>ตั้งค่าการพิมพ์ (Multi-Label)</h3>
+  
+  <div class="editor-group">
+    <label>จำนวนชุด (1 ชุด = 2 ดวง):</label>
+    <input type="number" id="qty-input" class="editor-input" value="1" min="1">
   </div>
 
-  <div class="stickers-container">
-    
-    <div id="sticker-left" class="sticker sticker-design">
-      <div class="qr-code-wrapper">
-        <div id="qrcode-left" class="qr-code"></div>
-        <input type="text" class="qr-text-input no-print" disabled> </div>
-      <div class="product-details">
-        <div class="product-name" id="product-name-left">HDH 1 GNITE COLLAGEN GUMMY</div>
-        <div class="product-code">0000<span id="product-code-left-qr">8856082006643</span></div>
-      </div>
-      <div class="price-value" id="price-left">240</div>
-    </div>
-
-    <div id="sticker-right" class="sticker sticker-design">
-      <div class="qr-code-wrapper">
-        <div id="qrcode-right" class="qr-code"></div>
-        <input type="text" class="qr-text-input no-print" disabled> </div>
-      <div class="product-details">
-        <div class="product-name" id="product-name-right">HDH 1 GNITE COLLAGEN GUMMY</div>
-        <div class="product-code">0000<span id="product-code-right-qr">8856082006643</span></div>
-      </div>
-      <div class="price-value" id="price-right">240</div>
-    </div>
-
+  <div class="editor-group">
+    <label>รหัส QR Code:</label>
+    <input type="text" id="qr-text" class="editor-input" value="8425497">
   </div>
 
-  <script>
-    // สร้างตัวแปรเก็บ instance ของ QR Code
-    var qrLeft = new QRCode(document.getElementById("qrcode-left"), { width: 38, height: 38 }); // ขนาด QR mm -> px (ประมาณ)
-    var qrRight = new QRCode(document.getElementById("qrcode-right"), { width: 38, height: 38 });
+  <div class="editor-group">
+    <label>ชื่อสินค้า:</label>
+    <input type="text" id="name-text" class="editor-input" value="CTP 1 HHR 100*3">
+    ขนาด: <input type="number" id="name-size" value="10" style="width:50px"> px
+  </div>
 
-    // ฟังก์ชันอัปเดตข้อมูลบนสติกเกอร์เมื่อมีการเปลี่ยนแปลงใน editor
-    function updateSticker() {
-      // ดึงค่าจาก inputs
-      var qrInput = document.getElementById('qr-input').value;
-      var productNameInput = document.getElementById('product-name-input').value;
-      var productNameSize = document.getElementById('product-name-size').value;
-      var priceInput = document.getElementById('price-input').value;
-      var priceSize = document.getElementById('price-size').value;
-      
-      var priceRightPos = document.getElementById('price-right-pos').value;
-      var priceBottomPos = document.getElementById('price-bottom-pos').value;
+  <div class="editor-group">
+    <label>ราคา:</label>
+    <input type="text" id="price-text" class="editor-input" value="450">
+    ขนาด: <input type="number" id="price-size" value="24" style="width:50px"> px
+  </div>
 
-      // อัปเดตข้อมูลสติกเกอร์ซ้าย
-      updateSingleSticker('left', qrInput, productNameInput, productNameSize, priceInput, priceSize, priceRightPos, priceBottomPos);
-      
-      // อัปเดตข้อมูลสติกเกอร์ขวา (สามารถเลือกให้ต่างกันได้ถ้าต้องการ)
-      updateSingleSticker('right', qrInput, productNameInput, productNameSize, priceInput, priceSize, priceRightPos, priceBottomPos);
+  <button onclick="generateAndPrint()" style="width:100%; padding:15px; background:#003366; color:white; border:none; border-radius:5px; cursor:pointer;">
+    🖨️ สั่งพิมพ์ทั้งหมด
+  </button>
+</div>
+
+<div id="print-container"></div>
+
+<script>
+function generateAndPrint() {
+    const container = document.getElementById('print-container');
+    const qty = document.getElementById('qty-input').value;
+    const qrVal = document.getElementById('qr-text').value;
+    const nameVal = document.getElementById('name-text').value;
+    const nameSize = document.getElementById('name-size').value;
+    const priceVal = document.getElementById('price-text').value;
+    const priceSize = document.getElementById('price-size').value;
+
+    container.innerHTML = ''; // ล้างค่าเก่า
+
+    for (let i = 0; i < qty; i++) {
+        const row = document.createElement('div');
+        row.className = 'sticker-row';
+        
+        // สร้างสติกเกอร์ 2 ดวงใน 1 แถว
+        const content = `
+            <div class="sticker">
+                <div class="qr-box"></div>
+                <div class="product-details">
+                    <div class="product-name" style="font-size:${nameSize}px">${nameVal}</div>
+                    <div class="product-code">0000${qrVal}</div>
+                </div>
+                <div class="price-value" style="font-size:${priceSize}px; right:2mm; bottom:1mm;">${priceVal}</div>
+            </div>
+            <div class="sticker">
+                <div class="qr-box"></div>
+                <div class="product-details">
+                    <div class="product-name" style="font-size:${nameSize}px">${nameVal}</div>
+                    <div class="product-code">0000${qrVal}</div>
+                </div>
+                <div class="price-value" style="font-size:${priceSize}px; right:2mm; bottom:1mm;">${priceVal}</div>
+            </div>
+        `;
+        row.innerHTML = content;
+        container.appendChild(row);
+
+        // สร้าง QR Code ให้ทั้ง 2 ดวง
+        const qrBoxes = row.querySelectorAll('.qr-box');
+        qrBoxes.forEach(box => {
+            new QRCode(box, { text: qrVal, width: 38, height: 38 });
+        });
     }
 
-    // ฟังก์ชันช่วยอัปเดตสติกเกอร์แผ่นเดียว
-    function updateSingleSticker(side, qrInput, pName, pSize, price, prSize, pRightPos, pBottomPos) {
-      // 1. อัปเดต QR Code
-      if (side === 'left') {
-        qrLeft.clear(); qrLeft.makeCode(qrInput);
-      } else {
-        qrRight.clear(); qrRight.makeCode(qrInput);
-      }
-      
-      // 2. อัปเดตชื่อสินค้า
-      var pNameElements = [document.getElementById('product-name-left'), document.getElementById('product-name-right')];
-      pNameElements[side === 'left' ? 0 : 1].innerText = pName;
-      pNameElements[side === 'left' ? 0 : 1].style.fontSize = pSize + 'px';
-      
-      // 3. อัปเดตเลขรหัส (0000 + QR)
-      var qrCodeElements = [document.getElementById('product-code-left-qr'), document.getElementById('product-code-right-qr')];
-      qrCodeElements[side === 'left' ? 0 : 1].innerText = qrInput;
-      
-      // 4. อัปเดตราคา
-      var priceElements = [document.getElementById('price-left'), document.getElementById('price-right')];
-      priceElements[side === 'left' ? 0 : 1].innerText = price;
-      priceElements[side === 'left' ? 0 : 1].style.fontSize = prSize + 'px';
-      
-      // 5. ปรับตำแหน่งราคา (Right/Bottom)
-      priceElements[side === 'left' ? 0 : 1].style.right = pRightPos + 'mm';
-      priceElements[side === 'left' ? 0 : 1].style.bottom = pBottomPos + 'mm';
-    }
-
-    // เริ่มต้นอัปเดตครั้งแรกเมื่อโหลดหน้า
-    updateSticker();
-
-  </script>
+    // สั่งพิมพ์หลังจากสร้างเสร็จ
+    setTimeout(() => { window.print(); }, 500);
+}
+</script>
 
 </body>
 </html>
