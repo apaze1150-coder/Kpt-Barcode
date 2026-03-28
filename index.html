@@ -3,47 +3,74 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunmi Label Multi-Print</title>
+<title>Sunmi Label Fixed Layout</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+  body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background: #f4f4f4; }
   
   /* แผงควบคุม (ซ่อนตอนพิมพ์) */
   .editor-panel {
-    background: white; padding: 20px; border-radius: 8px;
+    background: white; padding: 15px; border-radius: 8px;
     max-width: 500px; margin: 0 auto 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
-  .editor-group { margin-bottom: 12px; }
+  .editor-group { margin-bottom: 10px; }
   .editor-input { width: 100%; padding: 8px; box-sizing: border-box; }
-  .no-print { display: block; }
 
-  /* ส่วนกระดาษพิมพ์ */
+  /* พื้นที่พิมพ์ */
   #print-container { width: 80mm; margin: 0 auto; background: white; }
 
-  /* แถวสติกเกอร์คู่ */
   .sticker-row {
     width: 80mm; display: flex; justify-content: space-between;
     height: 18mm; overflow: hidden; page-break-after: always;
-    border-bottom: 1px dashed #eee; /* เส้นนำสายตาตอนออกแบบ */
+    border-bottom: 1px dashed #ccc; /* เส้นนำสายตา */
   }
 
   .sticker {
-    width: 38mm; height: 18mm; position: relative;
-    box-sizing: border-box; padding: 1mm 2mm;
+    width: 38mm; height: 18mm; position: relative; /* ใช้ position relative เป็นหลัก */
+    box-sizing: border-box; overflow: hidden;
   }
 
-  .qr-code { width: 10mm; height: 10mm; position: absolute; top: 1mm; left: 1mm; }
+  /* --- แยกส่วนประกอบให้เลื่อนอิสระ --- */
+  .qr-box { 
+    position: absolute; 
+    top: 1mm; 
+    left: 1mm; 
+  }
   
-  .product-details { margin-left: 13mm; margin-top: 0.5mm; }
-  .product-name { font-weight: bold; line-height: 1.1; }
-  .product-code { font-size: 8px; margin-top: 2px; }
+  .details-box {
+    position: absolute;
+    top: 1mm;
+    left: 12mm; /* ขยับหนี QR Code มาทางขวา */
+    width: 25mm;
+  }
 
-  .price-value { position: absolute; font-weight: bold; line-height: 1; }
+  .product-name { 
+    font-weight: bold; 
+    line-height: 1.1; 
+    word-wrap: break-word; /* ให้ตัดคำถ้าชื่อยาวเกินไป */
+  }
+
+  .product-code { 
+    font-size: 8px; 
+    margin-top: 2px;
+  }
+
+  .price-box {
+    position: absolute;
+    bottom: 0.5mm; /* อยู่ชิดขอบล่าง */
+    right: 2mm;    /* อยู่ชิดขอบขวา */
+    text-align: right;
+  }
+
+  .price-value { 
+    font-weight: bold; 
+    line-height: 0.9;
+  }
 
   @media print {
     .no-print { display: none !important; }
-    body { background: white; padding: 0; }
+    body { background: white; padding: 0; margin: 0; }
     .sticker-row { border: none; }
   }
 </style>
@@ -51,31 +78,31 @@
 <body>
 
 <div class="editor-panel no-print">
-  <h3>ตั้งค่าการพิมพ์ (Multi-Label)</h3>
+  <h3>ปรับตำแหน่งป้ายราคา (Fixed)</h3>
   
   <div class="editor-group">
     <label>จำนวนชุด (1 ชุด = 2 ดวง):</label>
-    <input type="number" id="qty-input" class="editor-input" value="1" min="1">
-  </div>
-
-  <div class="editor-group">
-    <label>รหัส QR Code:</label>
-    <input type="text" id="qr-text" class="editor-input" value="8425497">
+    <input type="number" id="qty-input" class="editor-input" value="1">
   </div>
 
   <div class="editor-group">
     <label>ชื่อสินค้า:</label>
     <input type="text" id="name-text" class="editor-input" value="CTP 1 HHR 100*3">
-    ขนาด: <input type="number" id="name-size" value="10" style="width:50px"> px
+    ขนาดชื่อ: <input type="number" id="name-size" value="10" style="width:50px"> px
+  </div>
+
+  <div class="editor-group">
+    <label>รหัสสินค้า (QR):</label>
+    <input type="text" id="qr-text" class="editor-input" value="8425497">
   </div>
 
   <div class="editor-group">
     <label>ราคา:</label>
     <input type="text" id="price-text" class="editor-input" value="450">
-    ขนาด: <input type="number" id="price-size" value="24" style="width:50px"> px
+    ขนาดราคา: <input type="number" id="price-size" value="28" style="width:50px"> px
   </div>
 
-  <button onclick="generateAndPrint()" style="width:100%; padding:15px; background:#003366; color:white; border:none; border-radius:5px; cursor:pointer;">
+  <button onclick="generateAndPrint()" style="width:100%; padding:15px; background:#003366; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">
     🖨️ สั่งพิมพ์ทั้งหมด
   </button>
 </div>
@@ -92,42 +119,44 @@ function generateAndPrint() {
     const priceVal = document.getElementById('price-text').value;
     const priceSize = document.getElementById('price-size').value;
 
-    container.innerHTML = ''; // ล้างค่าเก่า
+    container.innerHTML = ''; 
 
     for (let i = 0; i < qty; i++) {
         const row = document.createElement('div');
         row.className = 'sticker-row';
         
-        // สร้างสติกเกอร์ 2 ดวงใน 1 แถว
         const content = `
             <div class="sticker">
                 <div class="qr-box"></div>
-                <div class="product-details">
+                <div class="details-box">
                     <div class="product-name" style="font-size:${nameSize}px">${nameVal}</div>
                     <div class="product-code">0000${qrVal}</div>
                 </div>
-                <div class="price-value" style="font-size:${priceSize}px; right:2mm; bottom:1mm;">${priceVal}</div>
+                <div class="price-box">
+                    <div class="price-value" style="font-size:${priceSize}px">${priceVal}</div>
+                </div>
             </div>
             <div class="sticker">
                 <div class="qr-box"></div>
-                <div class="product-details">
+                <div class="details-box">
                     <div class="product-name" style="font-size:${nameSize}px">${nameVal}</div>
                     <div class="product-code">0000${qrVal}</div>
                 </div>
-                <div class="price-value" style="font-size:${priceSize}px; right:2mm; bottom:1mm;">${priceVal}</div>
+                <div class="price-box">
+                    <div class="price-value" style="font-size:${priceSize}px">${priceVal}</div>
+                </div>
             </div>
         `;
         row.innerHTML = content;
         container.appendChild(row);
 
-        // สร้าง QR Code ให้ทั้ง 2 ดวง
         const qrBoxes = row.querySelectorAll('.qr-box');
         qrBoxes.forEach(box => {
-            new QRCode(box, { text: qrVal, width: 38, height: 38 });
+            // ปรับขนาด QR ให้เล็กลงนิดนึงเพื่อประหยัดที่ (35x35 px)
+            new QRCode(box, { text: qrVal, width: 35, height: 35 });
         });
     }
 
-    // สั่งพิมพ์หลังจากสร้างเสร็จ
     setTimeout(() => { window.print(); }, 500);
 }
 </script>
